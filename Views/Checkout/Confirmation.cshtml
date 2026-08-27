@@ -1,0 +1,49 @@
+@model KickoffShop.Models.Order
+@{
+    ViewData["Title"] = "Narudžba potvrđena";
+}
+
+<div class="max-w-2xl mx-auto px-4 py-16 text-center">
+    <div class="text-6xl mb-4"></div>
+    <h1 class="text-3xl font-black text-green-700">Narudžba zaprimljena!</h1>
+    <p class="text-gray-500 mt-2">Hvala, <strong>@Model.CustomerName</strong>! Potvrda je poslana na @Model.CustomerEmail.</p>
+
+    <div class="bg-white rounded-2xl border border-gray-200 mt-8 p-6 text-left">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="font-bold text-lg">Narudžba #@Model.Id</h2>
+            <span class="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">@Model.Status</span>
+        </div>
+
+        <div class="space-y-3 mb-6">
+            @foreach (var item in Model.Items)
+            {
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-700">@item.ProductName <span class="text-gray-400">(@item.VariantTitle) ×@item.Quantity</span></span>
+                    <span class="font-medium">@((item.Price * item.Quantity).ToString("0.00")) €</span>
+                </div>
+            }
+        </div>
+
+        <div class="border-t pt-4 space-y-2 text-sm">
+            <div class="flex justify-between text-gray-500">
+                <span>Dostava na adresu</span>
+                <span>@Model.Address, @Model.City</span>
+            </div>
+            <div class="flex justify-between font-bold text-base">
+                <span>Ukupno plaćeno</span>
+                <span>@Model.TotalAmount.ToString("0.00") €</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+        <a asp-controller="Checkout" asp-action="Invoice" asp-route-id="@Model.Id"
+           class="inline-flex items-center justify-center gap-2 border-2 border-green-700 text-green-700 hover:bg-green-50 font-bold px-8 py-4 rounded-xl transition-colors">
+            Preuzmi račun (PDF)
+        </a>
+        <a asp-controller="Home" asp-action="Index"
+           class="inline-flex items-center justify-center bg-green-700 hover:bg-green-800 text-white font-bold px-8 py-4 rounded-xl transition-colors">
+            Nastavi kupovinu
+        </a>
+    </div>
+</div>

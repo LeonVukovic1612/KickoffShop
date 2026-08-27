@@ -1,0 +1,110 @@
+@model IEnumerable<KickoffShop.Models.Product>
+@using KickoffShop.Models
+@{
+    ViewData["Title"] = "Početna";
+    var onSale = ViewBag.OnSale as List<Product> ?? new List<Product>();
+}
+
+<section class="bg-green-700 text-white">
+    <div class="max-w-6xl mx-auto px-4 py-16">
+        <p class="text-xs uppercase tracking-widest opacity-75 mb-3">Sezona 2025 / 2026</p>
+        <h1 class="text-4xl md:text-5xl font-black leading-tight">Igraj kao profesionalac.</h1>
+        <p class="mt-4 text-lg opacity-90 max-w-xl">
+            Premium nogometna oprema — dresovi, kopačke, lopte i štitnici. Brza dostava diljem Hrvatske.
+        </p>
+        <a asp-controller="Store" asp-action="Index"
+           class="mt-8 inline-block bg-white text-brand font-bold px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+            Pregledaj sve proizvode
+        </a>
+    </div>
+</section>
+
+@if (onSale.Any())
+{
+    <div class="bg-white border-b border-gray-100">
+        <div class="max-w-6xl mx-auto px-4 py-8">
+            <div class="flex items-baseline gap-3 mb-5">
+                <h2 class="text-xl font-black">Na akciji</h2>
+                <span class="text-sm text-red-500 font-semibold">Sniženo @onSale.Count proizvo@(onSale.Count == 1 ? "d" : "da")</span>
+            </div>
+
+            <div class="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
+                @foreach (var p in onSale)
+                {
+                    var saleVariant = p.Variants
+                        .Where(v => v.CompareAtPrice != null && v.CompareAtPrice > v.Price)
+                        .OrderByDescending(v => (v.CompareAtPrice - v.Price) / v.CompareAtPrice)
+                        .First();
+                    var pct = (int)Math.Round((1 - saleVariant.Price / saleVariant.CompareAtPrice!.Value) * 100);
+
+                    <div class="product-card snap-start shrink-0 w-44">
+                        <a asp-controller="Product" asp-action="Details" asp-route-id="@p.Handle"
+                           class="product-card-inner group">
+                            <div class="relative">
+                                <div class="aspect-square bg-gray-100 overflow-hidden">
+                                    <img src="@p.ImageUrl" alt="@p.Title"
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                </div>
+                                <span class="absolute top-2 left-2 bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full">
+                                    -@pct%
+                                </span>
+                            </div>
+                            <div class="p-3 flex flex-col flex-1">
+                                <span class="text-xs text-gray-400 uppercase tracking-wide">@p.ProductType</span>
+                                <p class="text-sm font-semibold mt-0.5 leading-snug group-hover:text-brand transition-colors line-clamp-2">@p.Title</p>
+                                <div class="mt-auto pt-2">
+                                    <span class="text-base font-black text-gray-900">@saleVariant.Price.ToString("0.00") €</span>
+                                    <span class="text-xs text-gray-400 line-through ml-1">@saleVariant.CompareAtPrice!.Value.ToString("0.00") €</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<div class="max-w-6xl mx-auto px-4 py-10">
+    @if (!Model.Any())
+    {
+        <p class="text-center text-gray-400 py-20">Nema proizvoda.</p>
+    }
+    else
+    {
+        <div class="flex items-baseline justify-between mb-6">
+            <h2 class="text-xl font-black">Novi proizvodi</h2>
+            <a asp-controller="Store" asp-action="Index" class="text-sm text-brand hover:underline">Sve →</a>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            @foreach (var p in Model.Take(8))
+            {
+                var minPrice    = p.Variants.Min(v => v.Price);
+                var maxCompare  = p.Variants.Max(v => v.CompareAtPrice ?? 0);
+                var hasDiscount = maxCompare > minPrice;
+
+                <div class="product-card">
+                    <a asp-controller="Product" asp-action="Details" asp-route-id="@p.Handle"
+                       class="product-card-inner group">
+                        <div class="aspect-square bg-gray-100 overflow-hidden">
+                            <img src="@p.ImageUrl" alt="@p.Title"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        </div>
+                        <div class="p-4 flex flex-col flex-1">
+                            <span class="text-xs text-gray-400 uppercase tracking-wide">@p.ProductType</span>
+                            <h3 class="font-semibold mt-1 leading-snug group-hover:text-brand transition-colors">@p.Title</h3>
+                            <div class="flex items-baseline gap-2 mt-auto pt-3">
+                                <span class="text-lg font-bold text-gray-900">@minPrice.ToString("0.00") €</span>
+                                @if (hasDiscount)
+                                {
+                                    <span class="text-sm text-gray-400 line-through">@maxCompare.ToString("0.00") €</span>
+                                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">POPUST</span>
+                                }
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+</div>

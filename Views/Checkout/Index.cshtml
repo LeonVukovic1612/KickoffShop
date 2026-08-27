@@ -1,0 +1,192 @@
+@model IEnumerable<KickoffShop.Models.CartItem>
+@{
+    ViewData["Title"] = "Plaćanje";
+    var items = Model.ToList();
+    var subtotal = items.Sum(i => i.Price * i.Quantity);
+    var shipping = subtotal >= 75m ? 0m : 4.99m;
+    var total = subtotal + shipping;
+    var profileName = ViewBag.ProfileName as string ?? "";
+    var profileEmail = ViewBag.ProfileEmail as string ?? "";
+    var profileAddress = ViewBag.ProfileAddress as string ?? "";
+    var profileCity = ViewBag.ProfileCity as string ?? "";
+    var hasProfile = !string.IsNullOrEmpty(profileAddress) || !string.IsNullOrEmpty(profileCity);
+}
+
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <h1 class="text-3xl font-black mb-8">Plaćanje</h1>
+
+    <div class="grid md:grid-cols-2 gap-8">
+        <div>
+            <form asp-controller="Checkout" asp-action="PlaceOrder" method="post">
+                <div class="checkout-card mb-5">
+
+                    <div class="checkout-row">
+                        <div class="flex items-center justify-between">
+                            <h2>Podaci za dostavu</h2>
+                            @if (hasProfile)
+                            {
+                                <span class="text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-full">Popunjeno iz profila</span>
+                            }
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="checkout-label">Ime i prezime</label>
+                                <input type="text" name="customerName" required placeholder="Pero Perić"
+                                       value="@profileName" class="checkout-input" />
+                            </div>
+                            <div>
+                                <label class="checkout-label">Email</label>
+                                <input type="email" name="customerEmail" required placeholder="pero@email.com"
+                                       value="@profileEmail" class="checkout-input" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="checkout-row">
+                        <h2>Adresa dostave</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="checkout-label">Adresa</label>
+                                <input type="text" name="address" required placeholder="Ulica i broj"
+                                       value="@profileAddress" class="checkout-input" />
+                            </div>
+                            <div>
+                                <label class="checkout-label">Grad</label>
+                                <input type="text" name="city" required placeholder="Zagreb"
+                                       value="@profileCity" class="checkout-input" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="checkout-row">
+                        <div class="flex items-center justify-between">
+                            <h2 style="margin-bottom:0">Podaci kartice</h2>
+                            <span class="text-xs text-gray-400">(simulacija)</span>
+                        </div>
+                        <div class="space-y-4 mt-4">
+                            <div>
+                                <label class="checkout-label">Broj kartice</label>
+                                <input id="cardNumber" name="cardNumber" type="text" placeholder="4242 4242 4242 4242"
+                                       maxlength="19" autocomplete="cc-number" class="checkout-input font-mono" />
+                                @Html.ValidationMessage("cardNumber", new { @class = "text-red-500 text-xs mt-1 block" })
+                                <span id="err-cardNumber" class="text-red-500 text-xs mt-1 hidden block"></span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="checkout-label">Datum isteka</label>
+                                    <input id="cardExpiry" name="cardExpiry" type="text" placeholder="MM/GG"
+                                           maxlength="5" autocomplete="cc-exp" class="checkout-input font-mono" />
+                                    @Html.ValidationMessage("cardExpiry", new { @class = "text-red-500 text-xs mt-1 block" })
+                                    <span id="err-cardExpiry" class="text-red-500 text-xs mt-1 hidden block"></span>
+                                </div>
+                                <div>
+                                    <label class="checkout-label">CVV</label>
+                                    <input id="cardCvv" name="cardCvv" type="text" placeholder="123"
+                                           maxlength="3" autocomplete="cc-csc" class="checkout-input font-mono" />
+                                    @Html.ValidationMessage("cardCvv", new { @class = "text-red-500 text-xs mt-1 block" })
+                                    <span id="err-cardCvv" class="text-red-500 text-xs mt-1 hidden block"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-3">Ovo je simulacija plaćanja — podaci kartice se ne pohranjuju.</p>
+                    </div>
+
+                </div>
+
+                <button type="submit" class="auth-btn">
+                    Plati @total.ToString("0.00") € →
+                </button>
+            </form>
+        </div>
+
+        <div>
+            <div class="bg-white rounded-xl border border-gray-200 p-6 sticky top-24">
+                <h2 class="font-bold text-lg mb-4">Pregled (@items.Count proizvoda)</h2>
+                <div class="space-y-3 mb-4">
+                    @foreach (var item in items)
+                    {
+                        <div class="flex items-center gap-3">
+                            <img src="@item.ImageUrl" alt="@item.ProductName"
+                                 class="w-12 h-12 rounded-lg object-cover bg-gray-100" />
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium truncate">@item.ProductName</p>
+                                <p class="text-xs text-gray-400">@item.VariantTitle · ×@item.Quantity</p>
+                            </div>
+                            <span class="text-sm font-semibold">@((item.Price * item.Quantity).ToString("0.00")) €</span>
+                        </div>
+                    }
+                </div>
+                <div class="border-t pt-4 space-y-2 text-sm">
+                    <div class="flex justify-between text-gray-500">
+                        <span>Međuzbroj</span><span>@subtotal.ToString("0.00") €</span>
+                    </div>
+                    <div class="flex justify-between text-gray-500">
+                        <span>Dostava</span><span>@(shipping == 0 ? "Besplatno" : shipping.ToString("0.00") + " €")</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-base border-t pt-2 mt-2">
+                        <span>Ukupno</span><span>@total.ToString("0.00") €</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Card number — format as groups of 4
+    document.getElementById('cardNumber').addEventListener('input', function () {
+        let v = this.value.replace(/\D/g, '').substring(0, 16);
+        this.value = v.replace(/(.{4})/g, '$1 ').trim();
+    });
+
+    // Expiry — auto-insert slash after MM
+    document.getElementById('cardExpiry').addEventListener('input', function () {
+        let v = this.value.replace(/\D/g, '').substring(0, 4);
+        if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2);
+        this.value = v;
+    });
+
+    // CVV — digits only
+    document.getElementById('cardCvv').addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').substring(0, 3);
+    });
+
+    // Client-side validation before submit
+    document.querySelector('form').addEventListener('submit', function (e) {
+        let ok = true;
+
+        function showErr(id, msg) {
+            const el = document.getElementById('err-' + id);
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            ok = false;
+        }
+        function clearErr(id) {
+            document.getElementById('err-' + id).classList.add('hidden');
+        }
+
+        const digits = document.getElementById('cardNumber').value.replace(/\s/g, '');
+        if (!/^\d{16}$/.test(digits)) showErr('cardNumber', 'Broj kartice mora imati točno 16 znamenki.');
+        else clearErr('cardNumber');
+
+        const expVal = document.getElementById('cardExpiry').value.trim();
+        const expMatch = expVal.match(/^(\d{2})\/(\d{2})$/);
+        let expiryOk = false;
+        if (expMatch) {
+            const mm = parseInt(expMatch[1], 10);
+            const yy = parseInt(expMatch[2], 10) + 2000;
+            const lastDay = new Date(yy, mm, 0);
+            expiryOk = mm >= 1 && mm <= 12 && lastDay >= new Date();
+        }
+        if (!expiryOk) showErr('cardExpiry', 'Neispravan ili istekao datum (MM/GG).');
+        else clearErr('cardExpiry');
+
+        const cvv = document.getElementById('cardCvv').value.trim();
+        if (!/^\d{3}$/.test(cvv)) showErr('cardCvv', 'CVV mora imati točno 3 znamenke.');
+        else clearErr('cardCvv');
+
+        if (!ok) e.preventDefault();
+    });
+</script>
+}

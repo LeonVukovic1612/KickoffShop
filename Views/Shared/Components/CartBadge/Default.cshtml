@@ -1,0 +1,7 @@
+@model int
+@if (Model > 0)
+{
+    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-black min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center leading-none">
+        @(Model > 99 ? "99+" : Model.ToString())
+    </span>
+}

@@ -1,0 +1,151 @@
+@model IEnumerable<KickoffShop.Models.Product>
+@{
+    ViewData["Title"] = "Proizvodi";
+    ViewBag.AdminMenu = "products";
+    Layout = "_AdminLayout";
+}
+
+<div class="space-y-5">
+    <div class="flex justify-between items-center">
+        <p class="text-sm text-gray-500">@Model.Count() proizvoda ukupno</p>
+        <a asp-action="EditProduct" class="bg-green-700 hover:bg-green-800 text-white font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors">
+            + Novi proizvod
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr class="text-left text-xs text-gray-500 uppercase tracking-wider">
+                    <th class="px-6 py-3 font-medium">Proizvod</th>
+                    <th class="px-6 py-3 font-medium">Kategorija</th>
+                    <th class="px-6 py-3 font-medium text-center">Varijante</th>
+                    <th class="px-6 py-3 font-medium text-right">Min. cijena</th>
+                    <th class="px-6 py-3 font-medium text-right">Ukupno zaliha</th>
+                    <th class="px-6 py-3 font-medium"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach (var p in Model)
+                {
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <img src="@p.ImageUrl" alt="@p.Title"
+                                     class="w-10 h-10 rounded-lg object-cover bg-gray-100 shrink-0" />
+                                <div>
+                                    <p class="font-semibold text-gray-800">@p.Title</p>
+                                    <p class="text-xs text-gray-400">@p.Handle</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full font-medium">@p.ProductType</span>
+                        </td>
+                        <td class="px-6 py-4 text-center text-gray-600">@p.Variants.Count</td>
+                        <td class="px-6 py-4 text-right font-semibold text-gray-800">
+                            @p.Variants.Min(v => v.Price).ToString("0.00") €
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            @{
+                                var total = p.Variants.Sum(v => v.Stock);
+                                var stockColor = total == 0 ? "text-red-600 font-bold" : total < 10 ? "text-orange-500 font-semibold" : "text-gray-600";
+                            }
+                            <span class="@stockColor">@total kom.</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <a asp-action="EditProduct" asp-route-id="@p.Id"
+                                   class="text-blue-600 hover:text-blue-800 font-medium text-xs px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">
+                                    Uredi
+                                </a>
+                                <form id="delete-form-@p.Id" asp-action="DeleteProduct" method="post">
+                                    <input type="hidden" name="id" value="@p.Id" />
+                                    <button type="button"
+                                            onclick="openDeleteModal(@p.Id, '@Html.Raw(p.Title.Replace("'", "\\'"))')"
+                                            class="text-red-600 hover:text-red-800 font-medium text-xs px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition-colors">
+                                        Obriši
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-16 text-gray-400">
+                <p class="text-lg font-semibold">Nema proizvoda</p>
+                <p class="text-sm mt-1">Dodajte prvi proizvod klikom na "Novi proizvod".</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div id="delete-modal"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200"
+     aria-modal="true" role="dialog">
+
+    <div class="absolute inset-0 bg-black/50" onclick="closeDeleteModal()"></div>
+
+    <div id="delete-modal-card"
+         class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 scale-95 transition-transform duration-200">
+
+        <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mx-auto mb-4">
+            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+        </div>
+
+        <h3 class="text-lg font-bold text-gray-900 text-center mb-1">Obriši proizvod</h3>
+        <p class="text-sm text-gray-500 text-center mb-1">Sigurno želite obrisati:</p>
+        <p id="delete-modal-name" class="text-sm font-semibold text-gray-800 text-center mb-6 truncate px-2"></p>
+
+        <p class="text-xs text-red-500 text-center mb-6">Ova radnja je nepovratna.</p>
+
+        <div class="flex gap-3">
+            <button type="button" onclick="closeDeleteModal()"
+                    class="flex-1 bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2.5 rounded-xl border border-gray-200 transition-colors text-sm">
+                Odustani
+            </button>
+            <button type="button" id="delete-confirm-btn"
+                    class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-xl transition-colors text-sm">
+                Da, obriši
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const modal = document.getElementById('delete-modal');
+    const card  = document.getElementById('delete-modal-card');
+    const nameEl = document.getElementById('delete-modal-name');
+    const confirmBtn = document.getElementById('delete-confirm-btn');
+
+    function openDeleteModal(productId, productName) {
+        nameEl.textContent = productName;
+        confirmBtn.onclick = () => document.getElementById('delete-form-' + productId).submit();
+
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        card.classList.remove('scale-95');
+        card.classList.add('scale-100');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteModal() {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        card.classList.remove('scale-100');
+        card.classList.add('scale-95');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeDeleteModal();
+    });
+</script>
+}

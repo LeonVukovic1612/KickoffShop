@@ -1,0 +1,158 @@
+@model KickoffShop.Models.Product
+@{
+    ViewData["Title"] = Model.Title;
+    var variants = Model.Variants.ToList();
+    var first = variants.First();
+    var hasDiscount = variants.Any(v => v.CompareAtPrice.HasValue && v.CompareAtPrice > v.Price);
+    var isWishlisted = (bool)(ViewBag.IsWishlisted ?? false);
+}
+
+<div class="max-w-6xl mx-auto px-4 py-10">
+    <a asp-controller="Home" asp-action="Index" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-brand mb-8">
+        ← Natrag u trgovinu
+    </a>
+
+    <div class="grid md:grid-cols-2 gap-10">
+        <div class="aspect-square bg-gray-100 rounded-2xl overflow-hidden">
+            <img src="@Model.ImageUrl" alt="@Model.Title" class="w-full h-full object-cover" />
+        </div>
+
+        <div>
+            <span class="text-xs uppercase tracking-widest text-gray-400">@Model.ProductType</span>
+            @if (hasDiscount)
+            {
+                <span class="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">POPUST</span>
+            }
+            <h1 class="text-3xl font-black mt-2 leading-tight">@Model.Title</h1>
+            <p class="mt-4 text-gray-600 leading-relaxed">@Model.Description</p>
+
+            <form id="cart-form" asp-controller="Cart" asp-action="Add" method="post" class="mt-8">
+                @if (variants.Count > 1)
+                {
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold mb-3 text-gray-700">
+                            @(variants.First().Title.Length <= 3 ? "Veličina" : "Varijanta")
+                        </label>
+                        <div class="flex flex-wrap gap-2" id="variant-buttons">
+                            @for (int i = 0; i < variants.Count; i++)
+                            {
+                                var v = variants[i];
+                                <button type="button"
+                                        onclick="selectVariant(@v.Id, '@v.Title', @v.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), @(v.CompareAtPrice.HasValue ? v.CompareAtPrice.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) : "null"))"
+                                        class="variant-btn min-w-[3rem] h-11 px-4 rounded-lg border text-sm font-medium transition-colors @(i == 0 ? "bg-green-700 text-white border-green-700" : "bg-white text-gray-700 border-gray-300 hover:border-green-700 hover:text-green-700")">
+                                    @v.Title
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <input type="hidden" name="variantId" id="selectedVariantId" value="@first.Id" />
+                <input type="hidden" name="quantity" value="1" />
+
+                <div class="flex items-baseline gap-3 mb-6">
+                    <span class="text-3xl font-black" id="currentPrice">@first.Price.ToString("0.00") €</span>
+                    @if (first.CompareAtPrice.HasValue)
+                    {
+                        <span class="text-xl text-gray-400 line-through" id="comparePrice">@first.CompareAtPrice.Value.ToString("0.00") €</span>
+                    }
+                    else
+                    {
+                        <span class="text-xl text-gray-400 line-through hidden" id="comparePrice"></span>
+                    }
+                </div>
+            </form>
+
+            <div class="flex gap-3">
+                <button type="submit" form="cart-form"
+                        class="flex-1 flex justify-center gap-2 items-center shadow-xl text-lg bg-green-700 text-white font-bold isolation-auto border-green-700 before:absolute before:w-full before:transition-all before:duration-700 before:hover:w-full before:-left-full before:hover:left-0 before:rounded-full before:bg-green-900 before:-z-10 before:aspect-square before:hover:scale-150 before:hover:duration-700 relative z-10 px-8 py-4 overflow-hidden border-2 rounded-full group">
+                    Dodaj u košaricu
+                    <svg class="w-8 h-8 justify-end group-hover:rotate-90 group-hover:bg-white ease-linear duration-300 rounded-full border border-white group-hover:border-none p-2 rotate-45"
+                         viewBox="0 0 16 19" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 18C7 18.5523 7.44772 19 8 19C8.55228 19 9 18.5523 9 18H7ZM8.70711 0.292893C8.31658 -0.0976311 7.68342 -0.0976311 7.29289 0.292893L0.928932 6.65685C0.538408 7.04738 0.538408 7.68054 0.928932 8.07107C1.31946 8.46159 1.95262 8.46159 2.34315 8.07107L8 2.41421L13.6569 8.07107C14.0474 8.46159 14.6805 8.46159 15.0711 8.07107C15.4616 7.68054 15.4616 7.04738 15.0711 6.65685L8.70711 0.292893ZM9 18L9 1H7L7 18H9Z"
+                              class="fill-white group-hover:fill-green-700"></path>
+                    </svg>
+                </button>
+
+                <form asp-controller="Wishlist" asp-action="Toggle" method="post" id="wishlist-form">
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    <input type="hidden" name="returnUrl" value="@Url.Action("Details", "Product", new { id = Model.Handle })" />
+                    <label class="wishlist-container" title="@(isWishlisted ? "Ukloni iz liste želja" : "Dodaj u listu želja")">
+                        <input type="checkbox" @(isWishlisted ? "checked" : "") onchange="document.getElementById('wishlist-form').submit()" />
+                        <svg class="wishlist-checkmark" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                    </label>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    var related = ViewBag.Related as List<KickoffShop.Models.Product> ?? new List<KickoffShop.Models.Product>();
+}
+
+@if (related.Any())
+{
+    <div class="max-w-6xl mx-auto px-4 pb-16">
+        <div class="border-t border-gray-200 pt-12">
+            <h2 class="text-2xl font-black mb-6">Slični proizvodi</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                @foreach (var p in related)
+                {
+                    var minPrice = p.Variants.Min(v => v.Price);
+                    var maxCompare = p.Variants.Max(v => v.CompareAtPrice ?? 0);
+                    var hasDisc = maxCompare > minPrice;
+
+                    <a asp-controller="Product" asp-action="Details" asp-route-id="@p.Handle"
+                       class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col">
+                        <div class="aspect-square bg-gray-100 overflow-hidden">
+                            <img src="@p.ImageUrl" alt="@p.Title"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        </div>
+                        <div class="p-4 flex flex-col flex-1">
+                            <span class="text-xs text-gray-400 uppercase tracking-wide">@p.ProductType</span>
+                            <h3 class="font-semibold mt-1 leading-snug group-hover:text-green-700 transition-colors">@p.Title</h3>
+                            <div class="flex items-baseline gap-2 mt-auto pt-3">
+                                <span class="text-lg font-bold text-gray-900">@minPrice.ToString("0.00") €</span>
+                                @if (hasDisc)
+                                {
+                                    <span class="text-sm text-gray-400 line-through">@maxCompare.ToString("0.00") €</span>
+                                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">POPUST</span>
+                                }
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    const variantData = {
+        @foreach (var v in variants)
+        {
+            @:@v.Id: { price: "@v.Price.ToString("0.00") €", compare: "@(v.CompareAtPrice.HasValue ? v.CompareAtPrice.Value.ToString("0.00") + " €" : "")" },
+        }
+    };
+
+    function selectVariant(id, title, price, compare) {
+        document.getElementById('selectedVariantId').value = id;
+        document.getElementById('currentPrice').textContent = price.toFixed(2) + ' €';
+        const el = document.getElementById('comparePrice');
+        if (compare) {
+            el.textContent = compare.toFixed(2) + ' €';
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+        document.querySelectorAll('.variant-btn').forEach(btn => {
+            btn.className = btn.className.replace(/bg-green-700 text-white border-green-700/, '').replace(/bg-white text-gray-700 border-gray-300 hover:border-green-700 hover:text-green-700/, '').trim();
+        });
+        event.target.classList.add('bg-green-700', 'text-white', 'border-green-700');
+    }
+</script>
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " — Kickoff" : "Kickoff — Nogometna oprema")</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/buttons.css" />
+    <link rel="stylesheet" href="~/css/forms.css" />
+    <link rel="stylesheet" href="~/css/store.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { DEFAULT: '#16a34a', dark: '#15803d' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
+            <a asp-controller="Home" asp-action="Index" class="text-2xl font-black tracking-tight text-brand shrink-0">
+                Kickoff
+            </a>
+            <form asp-controller="Store" asp-action="Index" method="get" class="flex-1 max-w-sm">
+                <div class="relative">
+                    <input type="search" name="q" value="@ViewContext.HttpContext.Request.Query["q"]"
+                           placeholder="Pretraži proizvode…"
+                           class="w-full pl-4 pr-10 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent placeholder-gray-400" />
+                    <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            <nav class="flex items-center gap-4 text-sm font-medium ml-auto shrink-0">
+                @if (User.IsInRole("Admin"))
+                {
+                    <a asp-controller="Admin" asp-action="Index" class="nav-btn text-gray-600 hover:text-brand transition-colors">Admin</a>
+                }
+                <a asp-controller="Store" asp-action="Index" class="nav-btn text-gray-600 hover:text-brand transition-colors">Trgovina</a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-controller="Profile" asp-action="Index" class="nav-btn text-gray-600 hover:text-brand transition-colors">Profil</a>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="inline">
+                        <button type="submit" class="nav-btn text-gray-600 hover:text-brand transition-colors">Odjava</button>
+                    </form>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" class="nav-btn text-gray-600 hover:text-brand transition-colors">Prijava</a>
+                    <a asp-controller="Account" asp-action="Register" class="nav-btn text-gray-600 hover:text-brand transition-colors">Registracija</a>
+                }
+                <a asp-controller="Cart" asp-action="Index" class="relative flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors">
+                    Košarica
+                    @await Component.InvokeAsync("CartBadge")
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    @if (TempData["Success"] is string msg)
+    {
+        <div class="bg-green-50 border border-green-200 text-green-800 text-sm px-4 py-3 text-center">
+            @msg
+        </div>
+    }
+
+    <main class="flex-1">
+        @RenderBody()
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-16">
+        <div class="max-w-6xl mx-auto px-4 py-6 flex justify-between text-sm text-gray-500">
+            <span>© 2026 Kickoff. Sva prava pridržana.</span>
+            <span>Brza dostava diljem Hrvatske</span>
+        </div>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

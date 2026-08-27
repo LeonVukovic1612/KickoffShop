@@ -1,0 +1,74 @@
+@model IEnumerable<KickoffShop.Models.Order>
+@{
+    ViewData["Title"] = "Narudžbe";
+    ViewBag.AdminMenu = "orders";
+    Layout = "_AdminLayout";
+    var statuses = new[] { "Primljeno", "U obradi", "Poslano", "Isporučeno", "Otkazano" };
+}
+
+<div class="space-y-5">
+    <div class="flex justify-between items-center">
+        <p class="text-sm text-gray-500">@Model.Count() narudžbi ukupno</p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr class="text-left text-xs text-gray-500 uppercase tracking-wider">
+                    <th class="px-6 py-3 font-medium">#</th>
+                    <th class="px-6 py-3 font-medium">Kupac</th>
+                    <th class="px-6 py-3 font-medium">Grad</th>
+                    <th class="px-6 py-3 font-medium">Artikli</th>
+                    <th class="px-6 py-3 font-medium text-right">Ukupno</th>
+                    <th class="px-6 py-3 font-medium">Datum</th>
+                    <th class="px-6 py-3 font-medium">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @foreach (var o in Model)
+                {
+                    <tr class="hover:bg-gray-50 transition-colors align-top">
+                        <td class="px-6 py-4 text-gray-400 font-mono text-xs">#@o.Id</td>
+                        <td class="px-6 py-4">
+                            <p class="font-semibold text-gray-800">@o.CustomerName</p>
+                            <p class="text-xs text-gray-400">@o.CustomerEmail</p>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600">@o.City</td>
+                        <td class="px-6 py-4">
+                            <ul class="space-y-0.5">
+                                @foreach (var item in o.Items)
+                                {
+                                    <li class="text-xs text-gray-500">@item.ProductName <span class="text-gray-400">(@item.VariantTitle) ×@item.Quantity</span></li>
+                                }
+                            </ul>
+                        </td>
+                        <td class="px-6 py-4 text-right font-bold text-gray-800">@o.TotalAmount.ToString("0.00") €</td>
+                        <td class="px-6 py-4 text-gray-400 text-xs whitespace-nowrap">
+                            @o.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                        </td>
+                        <td class="px-6 py-4">
+                            <form asp-action="UpdateOrderStatus" method="post" class="flex items-center gap-2">
+                                <input type="hidden" name="id" value="@o.Id" />
+                                <select name="status" onchange="this.form.submit()"
+                                        class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-green-600 bg-white">
+                                    @foreach (var s in statuses)
+                                    {
+                                        <option value="@s" selected="@(o.Status == s)">@s</option>
+                                    }
+                                </select>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-16 text-gray-400">
+                <p class="text-lg font-semibold">Nema narudžbi</p>
+                <p class="text-sm mt-1">Narudžbe će se pojaviti ovdje kada kupci izvrše kupovinu.</p>
+            </div>
+        }
+    </div>
+</div>

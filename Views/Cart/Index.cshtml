@@ -1,0 +1,83 @@
+@model IEnumerable<KickoffShop.Models.CartItem>
+@{
+    ViewData["Title"] = "Košarica";
+    var items = Model.ToList();
+    var subtotal = items.Sum(i => i.Price * i.Quantity);
+    var shipping = subtotal >= 75m ? 0m : 4.99m;
+    var total = subtotal + shipping;
+}
+
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <h1 class="text-3xl font-black mb-8">Košarica</h1>
+
+    @if (!items.Any())
+    {
+        <div class="text-center py-24 text-gray-400">
+            <p class="text-6xl mb-4"></p>
+            <p class="text-xl font-semibold">Vaša košarica je prazna</p>
+            <a asp-controller="Home" asp-action="Index" class="mt-6 inline-block bg-green-700 text-white px-8 py-3 rounded-xl font-semibold hover:bg-green-800 transition-colors">
+                Pogledaj proizvode
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="md:col-span-2 space-y-4">
+                @foreach (var item in items)
+                {
+                    <div class="bg-white rounded-xl border border-gray-200 p-4 flex gap-4 items-center">
+                        <img src="@item.ImageUrl" alt="@item.ProductName"
+                             class="w-20 h-20 object-cover rounded-lg bg-gray-100 flex-shrink-0" />
+                        <div class="flex-1 min-w-0">
+                            <a asp-controller="Product" asp-action="Details" asp-route-id="@item.Handle"
+                               class="font-semibold hover:text-brand truncate block">@item.ProductName</a>
+                            <p class="text-sm text-gray-500">@item.VariantTitle</p>
+                            <p class="font-bold text-gray-900">@item.Price.ToString("0.00") €</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            <form asp-controller="Cart" asp-action="Remove" method="post">
+                                <input type="hidden" name="variantId" value="@item.VariantId" />
+                                <button type="submit" class="text-gray-400 hover:text-red-500 text-lg transition-colors" title="Ukloni">×</button>
+                            </form>
+                            <form asp-controller="Cart" asp-action="Update" method="post" class="flex items-center gap-2">
+                                <input type="hidden" name="variantId" value="@item.VariantId" />
+                                <button type="submit" name="quantity" value="@(item.Quantity - 1)"
+                                        class="w-8 h-8 rounded-lg border border-gray-300 hover:border-green-700 font-bold text-gray-600 transition-colors flex items-center justify-center">−</button>
+                                <span class="w-8 text-center font-semibold">@item.Quantity</span>
+                                <button type="submit" name="quantity" value="@(item.Quantity + 1)"
+                                        class="w-8 h-8 rounded-lg border border-gray-300 hover:border-green-700 font-bold text-gray-600 transition-colors flex items-center justify-center">+</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 p-6 h-fit space-y-4">
+                <h2 class="text-lg font-bold">Pregled narudžbe</h2>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Međuzbroj</span>
+                    <span>@subtotal.ToString("0.00") €</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Dostava</span>
+                    <span>@(shipping == 0 ? "Besplatno" : shipping.ToString("0.00") + " €")</span>
+                </div>
+                @if (shipping > 0)
+                {
+                    <p class="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+                        Dodajte još @((75m - subtotal).ToString("0.00")) € za besplatnu dostavu
+                    </p>
+                }
+                <div class="border-t pt-4 flex justify-between font-bold text-lg">
+                    <span>Ukupno</span>
+                    <span>@total.ToString("0.00") €</span>
+                </div>
+                <a asp-controller="Checkout" asp-action="Index"
+                   class="block w-full bg-green-700 hover:bg-green-800 text-white text-center font-bold py-4 rounded-xl transition-colors">
+                    Nastavi na plaćanje →
+                </a>
+            </div>
+        </div>
+    }
+</div>

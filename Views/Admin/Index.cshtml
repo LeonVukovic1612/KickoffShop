@@ -1,0 +1,162 @@
+@model KickoffShop.Models.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewBag.AdminMenu = "dashboard";
+    Layout = "_AdminLayout";
+    var labels = System.Text.Json.JsonSerializer.Serialize(Model.RevenueChart.Select(d => d.Date).ToList());
+    var data = System.Text.Json.JsonSerializer.Serialize(Model.RevenueChart.Select(d => (double)d.Revenue).ToList());
+}
+
+<div class="space-y-8">
+
+    <!-- Stat cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Ukupno narudžbi</p>
+            <p class="text-3xl font-black mt-2 text-gray-900">@Model.TotalOrders</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Ukupni prihod</p>
+            <p class="text-3xl font-black mt-2 text-green-700">@Model.TotalRevenue.ToString("0.00") €</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Ovaj mjesec — narudžbe</p>
+            <p class="text-3xl font-black mt-2 text-gray-900">@Model.MonthOrders</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Ovaj mjesec — prihod</p>
+            <p class="text-3xl font-black mt-2 text-green-700">@Model.MonthRevenue.ToString("0.00") €</p>
+        </div>
+    </div>
+
+    <!-- Revenue chart -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Prihod — zadnjih 30 dana</h2>
+        <canvas id="revenueChart" height="80"></canvas>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+
+        <!-- Top products -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Top proizvodi</h2>
+            @if (!Model.TopProducts.Any())
+            {
+                <p class="text-gray-400 text-sm">Nema podataka.</p>
+            }
+            else
+            {
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs text-gray-400 border-b border-gray-100">
+                            <th class="pb-2 font-medium">Proizvod</th>
+                            <th class="pb-2 font-medium text-right">Kom.</th>
+                            <th class="pb-2 font-medium text-right">Prihod</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        @foreach (var p in Model.TopProducts)
+                        {
+                            <tr>
+                                <td class="py-2.5 text-gray-700 truncate max-w-[180px]">@p.Name</td>
+                                <td class="py-2.5 text-right text-gray-500">@p.Quantity</td>
+                                <td class="py-2.5 text-right font-semibold text-green-700">@p.Revenue.ToString("0.00") €</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <!-- Recent orders -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Nedavne narudžbe</h2>
+            @if (!Model.RecentOrders.Any())
+            {
+                <p class="text-gray-400 text-sm">Nema narudžbi.</p>
+            }
+            else
+            {
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-xs text-gray-400 border-b border-gray-100">
+                            <th class="pb-2 font-medium">#</th>
+                            <th class="pb-2 font-medium">Kupac</th>
+                            <th class="pb-2 font-medium text-right">Iznos</th>
+                            <th class="pb-2 font-medium text-right">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        @foreach (var o in Model.RecentOrders)
+                        {
+                            <tr>
+                                <td class="py-2.5 text-gray-400 text-xs">#@o.Id</td>
+                                <td class="py-2.5 text-gray-700 truncate max-w-[140px]">@o.CustomerName</td>
+                                <td class="py-2.5 text-right font-semibold">@o.TotalAmount.ToString("0.00") €</td>
+                                <td class="py-2.5 text-right">
+                                    @{
+                                        var statusColor = o.Status switch
+                                        {
+                                            "Isporučeno" => "bg-green-100 text-green-700",
+                                            "Otkazano" => "bg-red-100 text-red-700",
+                                            "U obradi" => "bg-blue-100 text-blue-700",
+                                            _ => "bg-yellow-100 text-yellow-700"
+                                        };
+                                    }
+                                    <span class="text-xs px-2 py-0.5 rounded-full font-medium @statusColor">@o.Status</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <!-- Low stock -->
+    @if (Model.LowStock.Any())
+    {
+        <div class="bg-orange-50 border border-orange-200 rounded-xl p-6">
+            <h2 class="text-sm font-semibold text-orange-700 uppercase tracking-widest mb-4">Upozorenje — niska zaliha (ispod 5 kom.)</h2>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                @foreach (var v in Model.LowStock)
+                {
+                    <div class="bg-white rounded-lg border border-orange-100 px-4 py-3 flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-800">@v.Product.Title</p>
+                            <p class="text-xs text-gray-400">@v.Title</p>
+                        </div>
+                        <span class="text-lg font-black @(v.Stock == 0 ? "text-red-600" : "text-orange-500")">@v.Stock</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'bar',
+        data: {
+            labels: @Html.Raw(labels),
+            datasets: [{
+                data: @Html.Raw(data),
+                backgroundColor: '#16a34a',
+                borderRadius: 4,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 11 } } },
+                y: { beginAtZero: true, ticks: { callback: v => v + ' €', font: { size: 11 } } }
+            }
+        }
+    });
+</script>
+}

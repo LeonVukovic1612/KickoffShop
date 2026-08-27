@@ -1,0 +1,101 @@
+@model IEnumerable<KickoffShop.Models.Product>
+@using KickoffShop.Models
+@{
+    ViewData["Title"] = "Trgovina";
+    var categories    = ViewBag.Categories as List<string> ?? new List<string>();
+    var currentCat    = ViewBag.CurrentCategory as string;
+    var currentSort   = ViewBag.CurrentSort as string;
+    var searchQuery   = ViewBag.SearchQuery as string;
+    var isFiltered    = !string.IsNullOrEmpty(currentCat) || !string.IsNullOrEmpty(searchQuery);
+}
+
+<div class="max-w-6xl mx-auto px-4 py-10">
+
+    <div class="mb-8">
+        <h1 class="text-3xl font-black">Trgovina</h1>
+        @if (!string.IsNullOrEmpty(searchQuery))
+        {
+            <p class="text-gray-500 mt-1 text-sm">Rezultati pretrage za &bdquo;@searchQuery&ldquo;</p>
+        }
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+
+        <div class="flex flex-wrap gap-2">
+            <a href="@Url.Action("Index", "Store", new { q = searchQuery, sort = currentSort })"
+               class="btn-15 @(currentCat == null ? "btn-15-active" : "btn-15-colors")">
+                Sve
+            </a>
+            @foreach (var cat in categories)
+            {
+                <a href="@Url.Action("Index", "Store", new { q = searchQuery, category = cat, sort = currentSort })"
+                   class="btn-15 @(currentCat == cat ? "btn-15-active" : "btn-15-colors")">
+                    @cat
+                </a>
+            }
+        </div>
+
+        <div class="sort-dropdown">
+            <ul>
+                <li>
+                    <a href="#">
+                        @(currentSort == "price_asc" ? "Cijena: niža → viša" : currentSort == "price_desc" ? "Cijena: viša → niža" : "Zadano") ▾
+                    </a>
+                    <ul>
+                        <li><a href="@Url.Action("Index", "Store", new { q = searchQuery, category = currentCat })">Zadano</a></li>
+                        <li><a href="@Url.Action("Index", "Store", new { q = searchQuery, category = currentCat, sort = "price_asc" })">Cijena: niža → viša</a></li>
+                        <li><a href="@Url.Action("Index", "Store", new { q = searchQuery, category = currentCat, sort = "price_desc" })">Cijena: viša → niža</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    @if (Model.Any())
+    {
+        <p class="text-sm text-gray-400 mb-6">@Model.Count() proizvod@(Model.Count() == 1 ? "" : "a")</p>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-24">
+            <p class="text-gray-400 mb-4">Nema proizvoda koji odgovaraju odabranim filterima.</p>
+            <a asp-controller="Store" asp-action="Index" class="text-sm text-brand hover:underline">Prikaži sve proizvode</a>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            @foreach (var p in Model)
+            {
+                var minPrice   = p.Variants.Min(v => v.Price);
+                var maxCompare = p.Variants.Max(v => v.CompareAtPrice ?? 0);
+                var hasDiscount = maxCompare > minPrice;
+
+                <div class="product-card">
+                    <a asp-controller="Product" asp-action="Details" asp-route-id="@p.Handle"
+                       class="product-card-inner group">
+                        <div class="aspect-square bg-gray-100 overflow-hidden">
+                            <img src="@p.ImageUrl" alt="@p.Title"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        </div>
+                        <div class="p-4 flex flex-col flex-1">
+                            <span class="text-xs text-gray-400 uppercase tracking-wide">@p.ProductType</span>
+                            <h3 class="font-semibold mt-1 leading-snug group-hover:text-brand transition-colors">@p.Title</h3>
+                            <div class="flex items-baseline gap-2 mt-auto pt-3">
+                                <span class="text-lg font-bold text-gray-900">@minPrice.ToString("0.00") €</span>
+                                @if (hasDiscount)
+                                {
+                                    <span class="text-sm text-gray-400 line-through">@maxCompare.ToString("0.00") €</span>
+                                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">POPUST</span>
+                                }
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+
+</div>

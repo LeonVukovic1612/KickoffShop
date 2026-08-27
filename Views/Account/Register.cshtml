@@ -1,0 +1,59 @@
+@model KickoffShop.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Registracija";
+}
+
+<div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <a asp-controller="Home" asp-action="Index" class="text-3xl font-black text-green-700 tracking-tight">Kickoff</a>
+            <p class="text-gray-500 mt-2">Kreirajte novi račun</p>
+        </div>
+
+        <form asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly" class="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-4 hidden"></div>
+
+            <div class="checkout-card mb-5">
+                <div class="checkout-row">
+                    <h2>Osobni podaci</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="checkout-label">Ime i prezime</label>
+                            <input asp-for="Name" type="text" placeholder="Pero Perić" autocomplete="name" class="checkout-input" />
+                            <span asp-validation-for="Name" class="text-red-500 text-xs mt-1 block"></span>
+                        </div>
+                        <div>
+                            <label class="checkout-label">Email</label>
+                            <input asp-for="Email" type="email" placeholder="pero@email.com" autocomplete="email" class="checkout-input" />
+                            <span asp-validation-for="Email" class="text-red-500 text-xs mt-1 block"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="checkout-row">
+                    <h2>Lozinka</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="checkout-label">Lozinka</label>
+                            <input asp-for="Password" type="password" placeholder="Min. 7 znakova, veliko slovo, broj" autocomplete="new-password" class="checkout-input" />
+                            <span asp-validation-for="Password" class="text-red-500 text-xs mt-1 block"></span>
+                        </div>
+                        <div>
+                            <label class="checkout-label">Potvrda lozinke</label>
+                            <input asp-for="ConfirmPassword" type="password" placeholder="Ponovite lozinku" autocomplete="new-password" class="checkout-input" />
+                            <span asp-validation-for="ConfirmPassword" class="text-red-500 text-xs mt-1 block"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="auth-btn">
+                Registracija
+            </button>
+        </form>
+
+        <p class="text-center text-sm text-gray-500 mt-6">
+            Već imate račun?
+            <a asp-controller="Account" asp-action="Login" class="text-green-700 font-semibold hover:underline">Prijavite se</a>
+        </p>
+    </div>
+</div>

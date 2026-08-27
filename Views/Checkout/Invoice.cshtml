@@ -1,0 +1,125 @@
+@model KickoffShop.Models.Order
+@{
+    ViewData["Title"] = "Račun #" + Model.Id;
+    Layout = null;
+
+    var subtotal = Model.Items.Sum(i => i.Price * i.Quantity);
+    var shipping = subtotal >= 75m ? 0m : 4.99m;
+    var total = subtotal + shipping;
+    var invoiceDate = Model.CreatedAt.ToString("dd.MM.yyyy.");
+    var invoiceNumber = $"KS-{Model.CreatedAt:yyyy}-{Model.Id:D4}";
+}
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Račun @invoiceNumber — Kickoff</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @@media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+            .invoice-card { box-shadow: none !important; border: none !important; }
+        }
+        @@page {
+            margin: 1.5cm;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen py-10 px-4">
+
+    <div class="no-print max-w-3xl mx-auto mb-6 flex items-center justify-between">
+        <a href="@Url.Action("Confirmation", "Checkout", new { id = Model.Id })"
+           class="text-sm text-gray-500 hover:text-gray-800 transition-colors">
+            ← Natrag na potvrdu
+        </a>
+        <button onclick="window.print()"
+                class="bg-green-700 hover:bg-green-800 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors">
+            Ispiši / Spremi kao PDF
+        </button>
+    </div>
+
+    <div class="invoice-card max-w-3xl mx-auto bg-white rounded-2xl shadow-md p-10">
+
+        <div class="flex justify-between items-start mb-10">
+            <div>
+                <div class="text-3xl font-black text-green-700 tracking-tight">Kickoff</div>
+                <div class="text-xs text-gray-400 mt-1 leading-relaxed">
+                    Nogometna oprema d.o.o.<br />
+                    Ilica 1, 10000 Zagreb<br />
+                    OIB: 12345678901
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-4xl font-black text-gray-200 uppercase tracking-widest">Račun</div>
+                <div class="text-sm text-gray-700 font-semibold mt-1">@invoiceNumber</div>
+                <div class="text-xs text-gray-400 mt-0.5">Datum: @invoiceDate</div>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-100 mb-8"></div>
+
+        <div class="grid grid-cols-2 gap-8 mb-10">
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Kupac</div>
+                <div class="text-sm font-semibold text-gray-800">@Model.CustomerName</div>
+                <div class="text-sm text-gray-500">@Model.CustomerEmail</div>
+            </div>
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Adresa dostave</div>
+                <div class="text-sm text-gray-800">@Model.Address</div>
+                <div class="text-sm text-gray-800">@Model.City</div>
+            </div>
+        </div>
+
+        <table class="w-full text-sm mb-8">
+            <thead>
+                <tr class="border-b border-gray-200">
+                    <th class="text-left py-2 text-xs font-semibold text-gray-400 uppercase tracking-widest">Proizvod</th>
+                    <th class="text-center py-2 text-xs font-semibold text-gray-400 uppercase tracking-widest">Kol.</th>
+                    <th class="text-right py-2 text-xs font-semibold text-gray-400 uppercase tracking-widest">Cijena/kom</th>
+                    <th class="text-right py-2 text-xs font-semibold text-gray-400 uppercase tracking-widest">Iznos</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr class="border-b border-gray-50">
+                        <td class="py-3 text-gray-800">
+                            @item.ProductName
+                            <span class="text-gray-400 text-xs ml-1">(@item.VariantTitle)</span>
+                        </td>
+                        <td class="py-3 text-center text-gray-600">@item.Quantity</td>
+                        <td class="py-3 text-right text-gray-600">@item.Price.ToString("0.00") €</td>
+                        <td class="py-3 text-right font-medium text-gray-800">@((item.Price * item.Quantity).ToString("0.00")) €</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="flex justify-end">
+            <div class="w-64 space-y-2 text-sm">
+                <div class="flex justify-between text-gray-500">
+                    <span>Međuzbroj</span>
+                    <span>@subtotal.ToString("0.00") €</span>
+                </div>
+                <div class="flex justify-between text-gray-500">
+                    <span>Dostava</span>
+                    <span>@(shipping == 0 ? "Besplatno" : shipping.ToString("0.00") + " €")</span>
+                </div>
+                <div class="flex justify-between font-black text-base border-t border-gray-200 pt-3 mt-2 text-gray-900">
+                    <span>Ukupno</span>
+                    <span>@total.ToString("0.00") €</span>
+                </div>
+                <div class="text-right text-xs text-gray-400 pt-1">PDV uključen (25%)</div>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-100 mt-10 pt-6 text-center text-xs text-gray-400">
+            Hvala na kupovini! Za upite: podrska&#64;kickoff.hr &middot; kickoff.hr
+        </div>
+    </div>
+
+</body>
+</html>
